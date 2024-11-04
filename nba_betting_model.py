@@ -8,7 +8,7 @@ from evaluation import simulate_betting
 import pandas as pd
 
 # List of season(s) to fetch data for
-seasons = ['2022-23']  # Type in desired seasons
+seasons = ['2021-22']  # Type in desired seasons
 season_type = 'Regular Season'
 
 # Fetch game data for the specified seasons
