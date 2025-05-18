@@ -1,42 +1,48 @@
-# data_collection.py
-
-from nba_api.stats.endpoints import leaguegamefinder
 import pandas as pd
-import time
 
-def get_game_data_for_seasons(seasons, season_type='Regular Season'):
+def get_elo_data():
     """
-    Fetch NBA game data for a list of seasons.
-
-    Parameters:
-    seasons (list): List of seasons in format YYYY-YY
-    season_type (str): Type of season data to retrieve ('Regular Season', 'Playoffs')
-
-    Returns:
-    pd.DataFrame: Combined DataFrame containing game data for all specified seasons.
-    
+    Loads NBA Elo data from FiveThirtyEight's GitHub (matchup-level).
+    Filters regular season games and returns key columns for prediction.
     """
-    # Initialize empty DataFrame to store all season data
-    all_games = pd.DataFrame()
 
-    for season in seasons:
-        try:
-            # Fetch game data for the specified season and season type
-            gamefinder = leaguegamefinder.LeagueGameFinder(
-                season_nullable=season,
-                season_type_nullable=season_type
-            )
-            season_games = gamefinder.get_data_frames()[0]  # Get the DataFrame for this season
+    url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/nba-elo/nbaallelo.csv"
 
-            # Append the season's data to the master DataFrame
-            all_games = pd.concat([all_games, season_games], ignore_index=True)
-            
-            print(f"Data for season {season} {season_type} loaded successfully.")
-            
-            # Add a small delay to avoid rate limiting
-            time.sleep(1)
-        except Exception as e:
-            print(f"Error fetching data for season {season}: {e}")
+    try:
+        df = pd.read_csv(url)
 
-    return all_games
+        # Keep only regular season games
+        df = df[df['is_playoffs'] == 0]
 
+        # Filter and rename relevant columns
+        df = df[[
+            'date_game',       # Date
+            'team_id',         # Team
+            'opp_id',          # Opponent
+            'elo_i',           # Team's Elo before game
+            'opp_elo_i',       # Opponent's Elo before game
+            'pts',             # Team points
+            'opp_pts',         # Opponent points
+            'game_location',   # H (Home), A (Away)
+            'game_result'      # W or L
+        ]].rename(columns={
+            'date_game': 'date',
+            'team_id': 'team',
+            'opp_id': 'opponent',
+            'elo_i': 'team_elo',
+            'opp_elo_i': 'opponent_elo',
+            'pts': 'team_pts',
+            'opp_pts': 'opponent_pts',
+            'game_location': 'home_or_away',
+            'game_result': 'team_result'
+        })
+
+        # Convert date column to datetime
+        df['date'] = pd.to_datetime(df['date'])
+
+        print(f"ELO data loaded successfully with {len(df)} games.")
+        return df
+
+    except Exception as e:
+        print(f"Error loading ELO data: {e}")
+        return pd.DataFrame()
