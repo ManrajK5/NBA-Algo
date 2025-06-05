@@ -26,6 +26,12 @@ def predict():
     if home_elo is None or away_elo is None:
         return jsonify({"error": "Missing home_elo or away_elo"}), 400
 
+    try:
+        home_elo = float(home_elo)
+        away_elo = float(away_elo)
+    except (TypeError, ValueError):
+        return jsonify({"error": "home_elo and away_elo must be numeric"}), 400
+
     # Build feature vector
     elo_diff = home_elo - away_elo
     avg_elo = (home_elo + away_elo) / 2
